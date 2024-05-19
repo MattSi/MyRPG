@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "MyRPGCharacter.generated.h"
@@ -44,9 +45,15 @@ class AMyRPGCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
+	/** Look Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ChangeMovementAction;
+
+
 public:
 	AMyRPGCharacter();
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Method")
+	bool bShouldMoveEightDirection;
 
 protected:
 
@@ -55,6 +62,9 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	/** Called for changing movement method */
+	void ChangeMovementMethod(const FInputActionValue& Value);
 			
 
 protected:
