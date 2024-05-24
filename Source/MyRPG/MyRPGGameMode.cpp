@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "MyRPGGameMode.h"
-#include "MyRPGCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 
 AMyRPGGameMode::AMyRPGGameMode()
@@ -12,4 +11,5 @@ AMyRPGGameMode::AMyRPGGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+	
 }

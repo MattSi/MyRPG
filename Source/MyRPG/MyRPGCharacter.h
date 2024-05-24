@@ -3,11 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "CharacterTypes.h"
 #include "InputActionValue.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "MyRPGCharacter.generated.h"
 
+class AEnemyBaseCharacter;
+class AWeapon;
+class AItem;
 class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
@@ -45,15 +49,30 @@ class AMyRPGCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* LookAction;
 
-	/** Look Input Action */
+	/** Change movement Action (Temp) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ChangeMovementAction;
 
+	/** Attack Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* AttackAction;
 
+	/** Equip Weapon Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* PickupAction;
+
+	/** Dodge Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DodgeAction;
+	
+	UPROPERTY(VisibleInstanceOnly)
+	AItem *OverlappingItem;
 public:
 	AMyRPGCharacter();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement Method")
 	bool bShouldMoveEightDirection;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
+	bool bUseUpperBody;
 
 protected:
 
@@ -64,20 +83,73 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	/** Called for changing movement method */
-	void ChangeMovementMethod(const FInputActionValue& Value);
-			
+	void ChangeMovement(const FInputActionValue& Value);
 
-protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
 	// To add mapping context
 	virtual void BeginPlay();
 
+
 public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+	FORCEINLINE EActionState GetCurrentActionState() const {return ActionState;}
+
+	// ============================ State machine functions ============================================
+	UPROPERTY(BlueprintReadWrite)
+	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
+	UPROPERTY(BlueprintReadWrite)
+	EActionState ActionState = EActionState::EAS_Idle;
+	bool CanMove() const;
+	bool CanAttack() const;
+	bool CanDodge() const;
+	bool CanDefense() const;
+	bool ChangeActionState(EActionState NextState);
+	// ============================ State machine functions ============================================
+
+
+	// ============================ Action Dodge ===========================================
+	void Dodge(const FInputActionValue& Value);
+	UPROPERTY(EditAnywhere, Category="Action")
+	UAnimMontage* DodgeMontage;
+	FOnMontageEnded OnDodgeMontageEnded;
+	UFUNCTION()
+	void DodgeMontageEnded();
+	// ============================ Action Dodge ===========================================
+
+
+	// ============================ Action Attack ===========================================
+	/** Called for attack method */
+	void Attack(const FInputActionValue& Value);
+	void AttackEnd();
+	// ============================ Action Attack ===========================================
+
+	// ============================ Action Equip, Arm & Unarm ===============================
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
+	AWeapon* EquippedWeapon;
+	void EquipWeapon(AWeapon *Weapon);
+	bool CanDisArm();
+	void DisArm();
+	bool CanArm();
+	void Arm();
+	void PlayEquipMontage(const FName& SectionName);
+	/** Called for Equip weapon method */
+	void PickupWeapon(const FInputActionValue& Value);
+	// ============================ Action Equip, Arm & Unarm ===============================
+
+	// ============================ Lock Enemy ==============================================
+	AEnemyBaseCharacter *LockedEnemy;
+	bool bIsLockedOnEnabled;
+	
+	// ============================ Lock Enemy ==============================================
+	void SetOverlappingItem(AItem *Item);
+
+	// ============================ Switch Animation Layer ==================================
+	void SwitchAnimationLayer(TSubclassOf<UAnimInstance> AnimLayerClass);
 };
+
 
