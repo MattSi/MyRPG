@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "MyRPGCharacter.h"
+
 #include "Engine/LocalPlayer.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -12,8 +13,10 @@
 #include "InputActionValue.h"
 #include "KismetAnimationLibrary.h"
 #include "Animation/AnimLayerInterface.h"
+#include "Components/Grapple/GrappleComponent.h"
 #include "DataTable/DataTableManager.h"
 #include "Items/Weapon/Weapon.h"
+
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -22,6 +25,7 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AMyRPGCharacter::AMyRPGCharacter()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -57,9 +61,25 @@ AMyRPGCharacter::AMyRPGCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	
 
 	bShouldMoveEightDirection = false;
 	bUseUpperBody = false;
+
+	// Find Weapon Datatable
+	static ConstructorHelpers::FObjectFinder<UDataTable> DataTableObj(TEXT("/Game/DataTable/DT_Weapon.DT_Weapon"));
+	if (DataTableObj.Succeeded())
+	{
+		WeaponDataTable = DataTableObj.Object;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to find DataTable"));
+	}
+
+	// Grapple ==
+	GrappleComponent = CreateDefaultSubobject<UGrappleComponent>(TEXT("GrappleComponent"));
+	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -98,13 +118,14 @@ void AMyRPGCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 		EnhancedInput->BindAction(PickupAction, ETriggerEvent::Started, this, &AMyRPGCharacter::PickupWeapon);
 		EnhancedInput->BindAction(DodgeAction, ETriggerEvent::Started, this, &AMyRPGCharacter::Dodge);
+		EnhancedInput->BindAction(GrappleAction, ETriggerEvent::Triggered, this, &AMyRPGCharacter::Grapple);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error,
-			   TEXT(
-				   "'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."
-			   ), *GetNameSafe(this));
+		       TEXT(
+			       "'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."
+		       ), *GetNameSafe(this));
 	}
 }
 
@@ -112,6 +133,13 @@ void AMyRPGCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+	
+	
+}
+
+void AMyRPGCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
 }
 
 void AMyRPGCharacter::EquipWeapon(AWeapon* Weapon)
@@ -137,14 +165,14 @@ bool AMyRPGCharacter::CanDisArm()
 void AMyRPGCharacter::DisArm()
 {
 	//PlayEquipMontage(FName("Unequip"));
-	if(EquippedWeapon)
+	if (EquippedWeapon)
 	{
 		EquippedWeapon->Equip(GetMesh(), FName("WeaponCarrier"), this, this);
 	}
-	
-	UDataTable* WeaponDataTable = UDataTableManager::Get()->GetWeaponDataTable();
+
+	// UDataTable* WeaponDataTable = UDataTableManager::Get()->GetWeaponDataTable();
 	FWeaponDataStruct* WeaponRow = WeaponDataTable->FindRow<FWeaponDataStruct>(FName(TEXT("NoWeapon")), TEXT(""));
-	if(!WeaponRow) return;
+	if (!WeaponRow) return;
 	TSubclassOf<UAnimInstance> AnimLayerClass = WeaponRow->AnimLayerClass;
 	SwitchAnimationLayer(AnimLayerClass);
 	CharacterState = ECharacterState::ECS_Unequipped;
@@ -160,28 +188,28 @@ bool AMyRPGCharacter::CanArm()
 void AMyRPGCharacter::Arm()
 {
 	// PlayEquipMontage(FName("Equip"));
-	if(EquippedWeapon)
+	if (EquippedWeapon)
 	{
 		EquippedWeapon->Equip(GetMesh(), FName("WeaponRightHand"), this, this);
 	}
-	
-	UDataTable* WeaponDataTable = UDataTableManager::Get()->GetWeaponDataTable();
+
+	//UDataTable* WeaponDataTable = UDataTableManager::Get()->GetWeaponDataTable();
 	FWeaponDataStruct* WeaponRow = WeaponDataTable->FindRow<FWeaponDataStruct>(EquippedWeapon->WeaponName, TEXT(""));
-	if(!WeaponRow) return;
+	if (!WeaponRow) return;
 	TSubclassOf<UAnimInstance> AnimLayerClass = WeaponRow->AnimLayerClass;
 	SwitchAnimationLayer(AnimLayerClass);
 	CharacterState = ECharacterState::ECS_EquippedKatanaWeapon;
-	
 }
+
 void AMyRPGCharacter::SwitchAnimationLayer(TSubclassOf<UAnimInstance> AnimLayerClass)
 {
-	if(USkeletalMeshComponent *SkeletalMeshComponent = GetMesh())
+	if (USkeletalMeshComponent* SkeletalMeshComponent = GetMesh())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SkeletalMeshComponent got."))
-		if(UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
+		if (UAnimInstance* AnimInstance = SkeletalMeshComponent->GetAnimInstance())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("AnimInstance got."))
-			if(AnimLayerClass && AnimLayerClass->ImplementsInterface(UAnimLayerInterface::StaticClass()))
+			if (AnimLayerClass && AnimLayerClass->ImplementsInterface(UAnimLayerInterface::StaticClass()))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("AnimLayerClass got."))
 				AnimInstance->LinkAnimClassLayers(AnimLayerClass);
@@ -241,6 +269,11 @@ bool AMyRPGCharacter::ChangeActionState(EActionState NextState)
 	return true;
 }
 
+bool AMyRPGCharacter::CanGrapple() const
+{
+	return ActionState == EActionState::EAS_Idle;
+}
+
 // ============================ State machine functions ========================================================
 
 
@@ -258,25 +291,24 @@ void AMyRPGCharacter::Dodge(const FInputActionValue& Value)
 	float Direction = UKismetAnimationLibrary::CalculateDirection(WorldVelocity, GetActorRotation());
 	UE_LOG(LogTemp, Warning, TEXT("Direction: %f"), Direction);
 	int SectionNumber = 0;
-	if (Direction > -45.0f && Direction <= 45.0f)  // Forward
+	if (Direction > -45.0f && Direction <= 45.0f) // Forward
 	{
 		SectionNumber = 0;
 	}
-	else if (Direction > 45.0f && Direction <= 135.0f)  // Right
+	else if (Direction > 45.0f && Direction <= 135.0f) // Right
 	{
 		SectionNumber = 3;
 	}
-	else if (Direction > 135.0f || Direction <= -135.0f)  // Backward
+	else if (Direction > 135.0f || Direction <= -135.0f) // Backward
 	{
 		SectionNumber = 1;
 	}
-	else if (Direction > -135.0f && Direction <= -45.0f)  // Left
+	else if (Direction > -135.0f && Direction <= -45.0f) // Left
 	{
 		SectionNumber = 2;
 	}
 	ChangeActionState(EActionState::EAS_Dodge);
 	PlayAnimMontage(DodgeMontage, 1.0f, DodgeMontage->GetSectionName(SectionNumber));
-	
 }
 
 void AMyRPGCharacter::DodgeMontageEnded()
@@ -319,8 +351,22 @@ void AMyRPGCharacter::PickupWeapon(const FInputActionValue& Value)
 			DisArm();
 		else if (CanArm())
 			Arm();
-		
 	}
+}
+
+void AMyRPGCharacter::Grapple(const FInputActionValue& Value)
+{
+	if (!CanGrapple()) return;
+
+	ChangeActionState(EActionState::EAS_Grapple);
+
+	GrappleComponent->EquipHook();
+	ChangeActionState(EActionState::EAS_Idle);
+}
+
+bool AMyRPGCharacter::CanGrapple()
+{
+	return ActionState == EActionState::EAS_Idle;
 }
 
 // ============================ Action Montages Function End    ================================================
@@ -329,7 +375,6 @@ void AMyRPGCharacter::SetOverlappingItem(AItem* Item)
 {
 	OverlappingItem = Item;
 }
-
 
 
 void AMyRPGCharacter::Move(const FInputActionValue& Value)

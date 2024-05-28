@@ -9,6 +9,8 @@
 #include "Logging/LogMacros.h"
 #include "MyRPGCharacter.generated.h"
 
+class UGrappleComponent;
+class UCableComponent;
 class AEnemyBaseCharacter;
 class AWeapon;
 class AItem;
@@ -23,6 +25,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 UCLASS(config=Game)
 class AMyRPGCharacter : public ACharacter
 {
+
+private:
 	GENERATED_BODY()
 
 	/** Camera boom positioning the camera behind the character */
@@ -64,6 +68,11 @@ class AMyRPGCharacter : public ACharacter
 	/** Dodge Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* DodgeAction;
+
+	/** Dodge Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* GrappleAction;
+
 	
 	UPROPERTY(VisibleInstanceOnly)
 	AItem *OverlappingItem;
@@ -93,6 +102,7 @@ protected:
 
 
 public:
+	virtual void Tick(float DeltaSeconds) override;
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
@@ -109,6 +119,7 @@ public:
 	bool CanDodge() const;
 	bool CanDefense() const;
 	bool ChangeActionState(EActionState NextState);
+	bool CanGrapple() const;
 	// ============================ State machine functions ============================================
 
 
@@ -141,15 +152,25 @@ public:
 	void PickupWeapon(const FInputActionValue& Value);
 	// ============================ Action Equip, Arm & Unarm ===============================
 
+	// ============================ Action Grapple ==========================================
+	void Grapple(const FInputActionValue& Value);
+	bool CanGrapple();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Grapple)
+	UGrappleComponent* GrappleComponent;
+	
+	// ============================ Action Grapple ==========================================
+	
 	// ============================ Lock Enemy ==============================================
 	AEnemyBaseCharacter *LockedEnemy;
 	bool bIsLockedOnEnabled;
-	
 	// ============================ Lock Enemy ==============================================
+
+	
 	void SetOverlappingItem(AItem *Item);
 
 	// ============================ Switch Animation Layer ==================================
 	void SwitchAnimationLayer(TSubclassOf<UAnimInstance> AnimLayerClass);
+	UDataTable* WeaponDataTable;
 };
 
 

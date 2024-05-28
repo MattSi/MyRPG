@@ -9,7 +9,8 @@ public class MyRPG : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[]
-			{ "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara", "UMG", "AIModule", "NavigationSystem" });
+			{ "Core", "CoreUObject", "Engine", "InputCore", 
+				"EnhancedInput", "Niagara", "UMG", "AIModule", "NavigationSystem", "CableComponent" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "AnimGraphRuntime", "AnimationLocomotionLibraryRuntime" });
 

@@ -6,22 +6,6 @@
 #include "UObject/NoExportTypes.h"
 #include "DataTableManager.generated.h"
 
-
-USTRUCT(BlueprintType)
-struct FMyDataStruct : public FTableRowBase
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	int32 ID;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	FString Name;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
-	float Value;
-};
-
 USTRUCT(BlueprintType)
 struct FWeaponDataStruct : public FTableRowBase
 {
@@ -44,13 +28,10 @@ class MYRPG_API UDataTableManager : public UObject
 
 public:
 	static UDataTableManager* Get();
-	UDataTable* GetDataTable() const { return MyDataTable; }
 	UDataTable* GetWeaponDataTable() const { return WeaponDataTable; }
 
 private:
 	UDataTableManager();
-	UPROPERTY()
-	UDataTable* MyDataTable;
 
 	UPROPERTY()
 	UDataTable* WeaponDataTable;

@@ -12,6 +12,7 @@ class USphereComponent;
 enum class EItemState:uint8
 {
 	EIS_Hovering,
+	EIS_Ground,
 	EIS_Equipped
 };
 
@@ -27,6 +28,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(EditAnywhere)
+	UNiagaraComponent* ItemEffect;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -62,10 +65,11 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	USphereComponent *Sphere;
 
-	UPROPERTY(EditAnywhere)
-	UNiagaraComponent* ItemEffect;
+
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	float RunningTime;
+public:
+	FORCEINLINE UStaticMeshComponent* GetItemMesh() const {return ItemMesh;}
 };

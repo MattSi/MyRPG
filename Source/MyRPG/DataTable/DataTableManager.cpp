@@ -5,11 +5,6 @@
 
 UDataTableManager::UDataTableManager()
 {
-	static ConstructorHelpers::FObjectFinder<UDataTable> DataTableAsset(TEXT("DataTable'/Game/DataTable/DT_MyDataTable.DT_MyDataTable'"));
-	if(DataTableAsset.Succeeded())
-	{
-		MyDataTable = DataTableAsset.Object;
-	}
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> WeaponDataTableAsset(TEXT("DataTable'/Game/DataTable/DT_Weapon.DT_Weapon'"));
 	if(WeaponDataTableAsset.Succeeded())

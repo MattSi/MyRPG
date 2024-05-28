@@ -66,6 +66,7 @@ void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	{
 		Player->SetOverlappingItem(this);
 	}
+	
 }
 
 void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
