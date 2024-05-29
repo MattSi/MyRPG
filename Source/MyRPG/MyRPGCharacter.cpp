@@ -361,7 +361,7 @@ void AMyRPGCharacter::Grapple(const FInputActionValue& Value)
 	ChangeActionState(EActionState::EAS_Grapple);
 
 	GrappleComponent->EquipHook();
-	ChangeActionState(EActionState::EAS_Idle);
+	// ChangeActionState(EActionState::EAS_Idle);
 }
 
 bool AMyRPGCharacter::CanGrapple()

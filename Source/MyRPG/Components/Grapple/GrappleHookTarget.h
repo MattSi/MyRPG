@@ -9,6 +9,7 @@
 #include "GrappleHookTarget.generated.h"
 
 
+class UWidgetComponent;
 
 UCLASS()
 class MYRPG_API AGrappleHookTarget : public AItem
@@ -22,8 +23,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-	
+
 public:
-	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UWidgetComponent* WidgetComponent;
 };

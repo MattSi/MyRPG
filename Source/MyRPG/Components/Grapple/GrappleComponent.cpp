@@ -10,6 +10,7 @@
 #include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/TimelineComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/OverlapResult.h"
 #include "GameFramework/PawnMovementComponent.h"
 
@@ -21,8 +22,6 @@ UGrappleComponent::UGrappleComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 
 	// ...
-
-
 	GrappleType = EGrappleType::EGT_Inactive;
 	Timeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("Timeline"));
 }
@@ -58,8 +57,6 @@ void UGrappleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 									  FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 	if (!OwnerCharacter) return;
 	switch (GrappleType)
 	{
@@ -118,10 +115,9 @@ void UGrappleComponent::Firing()
 
 void UGrappleComponent::NearTarget()
 {
-	if (!Timeline->IsPlaying()){
-		Timeline->PlayFromStart();
-	}
-		
+	FName Section  = (rand()%2)?TEXT("Flip1"):TEXT("Flip2");
+	OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.8f, Section);
+	GrappleType = EGrappleType::EGT_Waiting;
 }
 
 void UGrappleComponent::FindBestTarget(TArray<FOverlapResult>& OverlapResults)
@@ -163,16 +159,15 @@ void UGrappleComponent::FindBestTarget(TArray<FOverlapResult>& OverlapResults)
 	if (BestActor)
 	{
 		if (GrappleHookTarget)
-		{
-			GrappleHookTarget->ItemEffect->Deactivate();
-		}
+			GrappleHookTarget->WidgetComponent->SetVisibility(false);
+		
 		GrappleHookTarget = Cast<AGrappleHookTarget>(BestActor);
-		GrappleHookTarget->ItemEffect->Activate();
+		GrappleHookTarget->WidgetComponent->SetVisibility(true);
 	}
 	else
 	{
 		if (GrappleHookTarget)
-			GrappleHookTarget->ItemEffect->Deactivate();
+			GrappleHookTarget->WidgetComponent->SetVisibility(false);
 		GrappleHookTarget = nullptr;
 	}
 }
@@ -191,29 +186,19 @@ void UGrappleComponent::EquipHook()
 
 		FRotator SpawnRotation = Direction.Rotation();
 		OwnerCharacter->SetActorRotation(SpawnRotation);
-
 		
 		if(OwnerCharacter->GetMovementComponent()->IsFalling())
 		{
-			UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
-			if (AnimInstance && GrappleMontage)
-			{
-				AnimInstance->Montage_Play(GrappleMontage, 2.0f);
-				AnimInstance->Montage_JumpToSection(FName("Fire_Air"), GrappleMontage);
-				AnimInstance->OnMontageEnded.AddDynamic(this, &UGrappleComponent::OnMontageEnded);
-			}
+			OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.5f, FName("Fire_Air"));
 		}else
 		{
-			UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
-			if (AnimInstance && GrappleMontage)
-			{
-				AnimInstance->Montage_Play(GrappleMontage, 2.0f);
-				AnimInstance->Montage_JumpToSection(FName("Fire_Ground"), GrappleMontage);
-				AnimInstance->OnMontageEnded.AddDynamic(this, &UGrappleComponent::OnMontageEnded);
-			}
+			OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.5f, FName("Fire_Ground"));
 		}
 		GrappleType = EGrappleType::EGT_Waiting;
-	
+	}
+	else
+	{
+		OwnerCharacter->ChangeActionState(EActionState::EAS_Idle);
 	}
 }
 
@@ -223,7 +208,6 @@ void UGrappleComponent::TimelineCallback(float Value)
 	FVector T = GrappleHookTarget->GetActorLocation();
 	FVector TargetLocation2 = FVector(T.X, T.Y, T.Z + 100.0f);
 	FVector NewLocation = FMath::Lerp(StartLocation, TargetLocation2, Value);
-	UE_LOG(LogTemp, Warning, TEXT("Character Location: %s"), *NewLocation.ToString())
 	OwnerCharacter->SetActorLocation(NewLocation);
 }
 
@@ -233,19 +217,10 @@ void UGrappleComponent::TimelineFinishedCallback()
 	GrappleHook->AutoDestroy();
 	Timeline->Deactivate();
 	GrappleType = EGrappleType::EGT_Inactive;
+	OwnerCharacter->ChangeActionState(EActionState::EAS_Idle);
 }
 
-void UGrappleComponent::PlayEquipMontage(const FName& SectionName)
-{
-	UAnimInstance* AnimInstance = OwnerCharacter->GetMesh()->GetAnimInstance();
-	if (AnimInstance && GrappleMontage)
-	{
-		AnimInstance->Montage_Play(GrappleMontage, 2.0f);
-		AnimInstance->Montage_JumpToSection(SectionName, GrappleMontage);
-	}
-}
-
-void UGrappleComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void UGrappleComponent::OnGrappleHookNotified(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
 	USkeletalMeshComponent* SkeletalMesh = OwnerCharacter->GetMesh();
 	SpawnLocation = SkeletalMesh->GetBoneLocation(TEXT("hand_r"));
@@ -271,10 +246,15 @@ void UGrappleComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 		GrappleHook->GetItemMesh()->SetWorldRotation(SpawnRotation);
 		GrappleHook->SetOwnerCharacter(OwnerCharacter);
 		GrappleHook->SetCableComponent(CableComponent);
-			
-	}
 		
-	
+	}
 	GrappleHook->SetTarget(GrappleHookTarget);
 	GrappleType = EGrappleType::EGT_Firing;
+}
+
+void UGrappleComponent::PlayFlipTimeline()
+{
+	if (!Timeline->IsPlaying()){
+		Timeline->PlayFromStart();
+	}
 }

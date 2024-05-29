@@ -36,7 +36,7 @@ protected:
 	UCurveFloat* LerpCurve;
 
 	UTimelineComponent* Timeline;
-	AGrappleHook* GrappleHook;
+	
 	void Inactive();
 	void Firing();
 	void NearTarget();
@@ -62,11 +62,12 @@ public:
 	void TimelineCallback(float Value);
 	UFUNCTION()
 	void TimelineFinishedCallback();
-
-	void PlayEquipMontage(const FName& SectionName);
+	
 	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-
+	void OnGrappleHookNotified(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation);
 	FVector SpawnLocation;
 	FVector TargetLocation;
+	AGrappleHook* GrappleHook;
+	UFUNCTION()
+	void PlayFlipTimeline();
 };
