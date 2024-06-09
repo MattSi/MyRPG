@@ -11,6 +11,7 @@ UDataTableManager::UDataTableManager()
 	{
 		WeaponDataTable = WeaponDataTableAsset.Object;
 	}
+	
 }
 
 UDataTableManager* UDataTableManager::Get()

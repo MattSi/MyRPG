@@ -73,6 +73,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* GrappleAction;
 
+	/** Defense Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* DefenseAction;
+
 	
 	UPROPERTY(VisibleInstanceOnly)
 	AItem *OverlappingItem;
@@ -165,6 +169,12 @@ public:
 	bool bIsLockedOnEnabled;
 	// ============================ Lock Enemy ==============================================
 
+	// ============================ Defense Action ==========================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAnimMontage *DefenseMontage;
+	void Defense(const FInputActionValue& Value);
+	void StopDefense(const FInputActionValue& Value);
+	// ============================ Defense Action ==========================================
 	
 	void SetOverlappingItem(AItem *Item);
 

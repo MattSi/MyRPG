@@ -18,23 +18,18 @@ UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYRPG_API UGrappleComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
 public:	
 	// Sets default values for this component's properties
 	UGrappleComponent();
-
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-	
 	AMyRPGCharacter* OwnerCharacter = nullptr;
 	AGrappleHookTarget *GrappleHookTarget = nullptr;
 	EGrappleType GrappleType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Hook")
 	UCurveFloat* LerpCurve;
-
 	UTimelineComponent* Timeline;
 	
 	void Inactive();

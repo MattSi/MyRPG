@@ -17,7 +17,6 @@ class UProjectileMovementComponent;
 UCLASS()
 class MYRPG_API AGrappleHook : public AItem
 {
-
 private:
 	GENERATED_BODY()
 
@@ -35,14 +34,17 @@ public:
 	AGrappleHook();
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UCurveFloat* LerpCurve;
-
 	UTimelineComponent* Timeline;
+
 	void SetTarget(AGrappleHookTarget* Target);
 	FORCEINLINE void SetOwnerCharacter(AMyRPGCharacter* OwnerRPGCharacter)
 	{
 		OwnerCharacter = OwnerRPGCharacter;
 	};
-	void SetCableComponent(UCableComponent* Cable) { CableComponent = Cable; };
+	FORCEINLINE void SetCableComponent(UCableComponent* Cable)
+	{
+		CableComponent = Cable;
+	};
 
 	UFUNCTION()
 	void AutoDestroy();

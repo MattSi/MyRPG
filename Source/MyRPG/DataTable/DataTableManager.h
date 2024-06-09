@@ -3,8 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
 #include "DataTableManager.generated.h"
+
+class UAnimMontage;
 
 USTRUCT(BlueprintType)
 struct FWeaponDataStruct : public FTableRowBase
@@ -16,6 +17,22 @@ struct FWeaponDataStruct : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Data")
 	TSubclassOf<UAnimInstance> AnimLayerClass;
+};
+
+USTRUCT(BlueprintType)
+struct FAIActionListDataStruct: public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FName ActionId;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UAnimMontage* Montage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText Comments;
+	
 };
 
 /**

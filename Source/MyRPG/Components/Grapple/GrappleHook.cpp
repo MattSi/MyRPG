@@ -8,6 +8,7 @@
 #include "MyRPGCharacter.h"
 #include "NiagaraComponent.h"
 #include "Components/TimelineComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 AGrappleHook::AGrappleHook()
 {
@@ -37,6 +38,8 @@ void AGrappleHook::BeginPlay()
 		FTimerHandle TimerHandle;
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &AGrappleHook::AutoDestroy, 3.0f, false);
 	});
+	
+	//UGameplayStatics::ApplyDamage()
 }
 
 void AGrappleHook::SetTarget(AGrappleHookTarget* Target)

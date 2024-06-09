@@ -37,7 +37,8 @@ void UGrappleComponent::BeginPlay()
 	USkeletalMeshComponent* SkeletalMesh = OwnerCharacter->GetMesh();
 	if (CableComponent)
 	{
-		CableComponent->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform, FName("WeaponRightHand"));
+		CableComponent->AttachToComponent(SkeletalMesh, FAttachmentTransformRules::KeepRelativeTransform,
+		                                  FName("WeaponRightHand"));
 		CableComponent->SetVisibility(false);
 	}
 
@@ -52,9 +53,10 @@ void UGrappleComponent::BeginPlay()
 		Timeline->SetTimelineFinishedFunc(TimelineFinishedCallback);
 	}
 }
+
 // Called every frame
 void UGrappleComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-									  FActorComponentTickFunction* ThisTickFunction)
+                                      FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (!OwnerCharacter) return;
@@ -115,7 +117,7 @@ void UGrappleComponent::Firing()
 
 void UGrappleComponent::NearTarget()
 {
-	FName Section  = (rand()%2)?TEXT("Flip1"):TEXT("Flip2");
+	FName Section = (rand() % 2) ? TEXT("Flip1") : TEXT("Flip2");
 	OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.8f, Section);
 	GrappleType = EGrappleType::EGT_Waiting;
 }
@@ -160,7 +162,7 @@ void UGrappleComponent::FindBestTarget(TArray<FOverlapResult>& OverlapResults)
 	{
 		if (GrappleHookTarget)
 			GrappleHookTarget->WidgetComponent->SetVisibility(false);
-		
+
 		GrappleHookTarget = Cast<AGrappleHookTarget>(BestActor);
 		GrappleHookTarget->WidgetComponent->SetVisibility(true);
 	}
@@ -173,10 +175,9 @@ void UGrappleComponent::FindBestTarget(TArray<FOverlapResult>& OverlapResults)
 }
 
 
-
 void UGrappleComponent::EquipHook()
 {
-	if(GrappleType != EGrappleType::EGT_Inactive) return;
+	if (GrappleType != EGrappleType::EGT_Inactive) return;
 	if (GrappleHookClass && OwnerCharacter && GrappleHookTarget)
 	{
 		USkeletalMeshComponent* SkeletalMesh = OwnerCharacter->GetMesh();
@@ -186,15 +187,42 @@ void UGrappleComponent::EquipHook()
 
 		FRotator SpawnRotation = Direction.Rotation();
 		OwnerCharacter->SetActorRotation(SpawnRotation);
-		
-		if(OwnerCharacter->GetMovementComponent()->IsFalling())
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = OwnerCharacter;
+		SpawnParams.Instigator = OwnerCharacter->GetInstigator();
+
+		GrappleHook = GetWorld()->SpawnActor<AGrappleHook>(
+			GrappleHookClass, SpawnLocation, SpawnRotation, SpawnParams);
+
+		if (GrappleHook)
 		{
-			OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.5f, FName("Fire_Air"));
-		}else
-		{
-			OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.5f, FName("Fire_Ground"));
+			if (CableComponent)
+			{
+				CableComponent->SetWorldLocation(SpawnLocation);
+				CableComponent->SetAttachEndTo(GrappleHook, NAME_None);
+			}
+
+			GrappleHook->GetItemMesh()->SetWorldRotation(SpawnRotation);
+			GrappleHook->SetOwnerCharacter(OwnerCharacter);
+			GrappleHook->SetCableComponent(CableComponent);
+			GrappleHook->GetItemMesh()->SetVisibility(false);
+
+			if (OwnerCharacter->GetMovementComponent()->IsFalling())
+			{
+				OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.5f, FName("Fire_Air"));
+			}
+			else
+			{
+				OwnerCharacter->PlayAnimMontage(GrappleMontage, 1.5f, FName("Fire_Ground"));
+			}
+
+			GrappleType = EGrappleType::EGT_Waiting;
 		}
-		GrappleType = EGrappleType::EGT_Waiting;
+		else
+		{
+			OwnerCharacter->ChangeActionState(EActionState::EAS_Idle);
+		}
 	}
 	else
 	{
@@ -222,39 +250,17 @@ void UGrappleComponent::TimelineFinishedCallback()
 
 void UGrappleComponent::OnGrappleHookNotified(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
 {
-	USkeletalMeshComponent* SkeletalMesh = OwnerCharacter->GetMesh();
-	SpawnLocation = SkeletalMesh->GetBoneLocation(TEXT("hand_r"));
-	FVector Direction = (TargetLocation - SpawnLocation).GetSafeNormal();
-
-	FRotator SpawnRotation = Direction.Rotation();
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = OwnerCharacter;
-	SpawnParams.Instigator = OwnerCharacter->GetInstigator();
-
-	GrappleHook = GetWorld()->SpawnActor<AGrappleHook>(
-	GrappleHookClass, SpawnLocation, SpawnRotation, SpawnParams);
-
-	if (GrappleHook)
-	{
-		if (CableComponent)
-		{
-			CableComponent->SetWorldLocation(SpawnLocation);
-			CableComponent->SetVisibility(true);
-			CableComponent->SetAttachEndTo(GrappleHook, NAME_None);
-		}
-
-		GrappleHook->GetItemMesh()->SetWorldRotation(SpawnRotation);
-		GrappleHook->SetOwnerCharacter(OwnerCharacter);
-		GrappleHook->SetCableComponent(CableComponent);
-		
-	}
+	if(CableComponent)
+		CableComponent->SetVisibility(true);
+	GrappleHook->GetItemMesh()->SetVisibility(true);
 	GrappleHook->SetTarget(GrappleHookTarget);
 	GrappleType = EGrappleType::EGT_Firing;
 }
 
 void UGrappleComponent::PlayFlipTimeline()
 {
-	if (!Timeline->IsPlaying()){
+	if (!Timeline->IsPlaying())
+	{
 		Timeline->PlayFromStart();
 	}
 }

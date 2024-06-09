@@ -61,7 +61,7 @@ AMyRPGCharacter::AMyRPGCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
-	
+
 
 	bShouldMoveEightDirection = false;
 	bUseUpperBody = false;
@@ -79,7 +79,6 @@ AMyRPGCharacter::AMyRPGCharacter()
 
 	// Grapple ==
 	GrappleComponent = CreateDefaultSubobject<UGrappleComponent>(TEXT("GrappleComponent"));
-	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -119,6 +118,10 @@ void AMyRPGCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInput->BindAction(PickupAction, ETriggerEvent::Started, this, &AMyRPGCharacter::PickupWeapon);
 		EnhancedInput->BindAction(DodgeAction, ETriggerEvent::Started, this, &AMyRPGCharacter::Dodge);
 		EnhancedInput->BindAction(GrappleAction, ETriggerEvent::Triggered, this, &AMyRPGCharacter::Grapple);
+
+		// Defense
+		EnhancedInput->BindAction(DefenseAction, ETriggerEvent::Started, this, &AMyRPGCharacter::Defense);
+		EnhancedInput->BindAction(DefenseAction, ETriggerEvent::Completed, this, &AMyRPGCharacter::StopDefense);
 	}
 	else
 	{
@@ -133,8 +136,6 @@ void AMyRPGCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
-	
-	
 }
 
 void AMyRPGCharacter::Tick(float DeltaSeconds)
@@ -244,7 +245,8 @@ bool AMyRPGCharacter::CanAttack() const
 		ActionState != EActionState::EAS_Dodge &&
 		ActionState != EActionState::EAS_EquippingWeapon &&
 		ActionState != EActionState::EAS_HitReaction &&
-		ActionState != EActionState::EAS_SP_Attacking;
+		ActionState != EActionState::EAS_SP_Attacking &&
+		ActionState != EActionState::EAS_Grapple;
 }
 
 bool AMyRPGCharacter::CanDodge() const
@@ -252,7 +254,8 @@ bool AMyRPGCharacter::CanDodge() const
 	return
 		ActionState != EActionState::EAS_Dodge &&
 		ActionState != EActionState::EAS_EquippingWeapon &&
-		ActionState != EActionState::EAS_HitReaction;
+		ActionState != EActionState::EAS_HitReaction &&
+		ActionState != EActionState::EAS_Grapple;
 }
 
 bool AMyRPGCharacter::CanDefense() const
@@ -260,7 +263,8 @@ bool AMyRPGCharacter::CanDefense() const
 	return CharacterState != ECharacterState::ECS_Unequipped &&
 		ActionState != EActionState::EAS_Defence &&
 		ActionState != EActionState::EAS_EquippingWeapon &&
-		ActionState != EActionState::EAS_HitReaction;
+		ActionState != EActionState::EAS_HitReaction &&
+		ActionState != EActionState::EAS_Grapple;
 }
 
 bool AMyRPGCharacter::ChangeActionState(EActionState NextState)
@@ -361,7 +365,6 @@ void AMyRPGCharacter::Grapple(const FInputActionValue& Value)
 	ChangeActionState(EActionState::EAS_Grapple);
 
 	GrappleComponent->EquipHook();
-	// ChangeActionState(EActionState::EAS_Idle);
 }
 
 bool AMyRPGCharacter::CanGrapple()
@@ -369,7 +372,21 @@ bool AMyRPGCharacter::CanGrapple()
 	return ActionState == EActionState::EAS_Idle;
 }
 
+
+void AMyRPGCharacter::Defense(const FInputActionValue& Value)
+{
+	if(DefenseMontage)
+	{
+		PlayAnimMontage(DefenseMontage);
+	}
+}
+
+void AMyRPGCharacter::StopDefense(const FInputActionValue& Value)
+{
+}
 // ============================ Action Montages Function End    ================================================
+
+
 
 void AMyRPGCharacter::SetOverlappingItem(AItem* Item)
 {
