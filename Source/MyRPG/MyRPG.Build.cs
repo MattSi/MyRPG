@@ -10,7 +10,7 @@ public class MyRPG : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[]
 			{ "Core", "CoreUObject", "Engine", "InputCore", 
-				"EnhancedInput", "Niagara", "UMG", "AIModule", "NavigationSystem", "CableComponent" });
+				"EnhancedInput", "Niagara", "UMG", "AIModule", "NavigationSystem", "CableComponent" , "GameplayTasks"});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "AnimGraphRuntime", "AnimationLocomotionLibraryRuntime" });
 
