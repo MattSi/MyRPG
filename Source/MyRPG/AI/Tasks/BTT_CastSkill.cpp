@@ -4,6 +4,7 @@
 #include "AI/Tasks/BTT_CastSkill.h"
 
 #include "AIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -13,6 +14,7 @@ UBTT_CastSkill::UBTT_CastSkill()
 	RootMotionScale = 1.0f;
 	MinScale = 0.3f;
 	MaxScale = 1.6f;
+	bNotifyTick = true;
 }
 
 void UBTT_CastSkill::ComputeRootMotionScale(ACharacter* AICharacter, float RootMotionTranslateSize)
@@ -82,4 +84,30 @@ float UBTT_CastSkill::CalculateRootMotionDistance(UAnimMontage* Montage, float S
 
 	FTransform RootMotionTransform = Montage->ExtractRootMotion(StartTime, EndTime, false);
 	return RootMotionTransform.GetTranslation().Size();
+}
+
+void UBTT_CastSkill::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+{
+	UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
+	if (BlackboardComp)
+	{
+		int32 BlackboardValue = BlackboardComp->GetValueAsInt(BlackboardKey.SelectedKeyName);
+		if (AbortValues.Contains(BlackboardValue))
+		{
+			if (auto* const Controller = Cast<AAIController>(OwnerComp.GetAIOwner()))
+			{
+				if (auto* const Character = Cast<ACharacter>(Controller->GetPawn()))
+				{
+					if (auto* AnimInstance = Character->GetMesh()->GetAnimInstance())
+					{
+						if(MontageToPlay )
+						{
+							AnimInstance->Montage_Stop(0, MontageToPlay);
+						}
+					}
+				}
+			}
+			FinishLatentTask(OwnerComp, EBTNodeResult::Aborted);
+		}
+	}
 }

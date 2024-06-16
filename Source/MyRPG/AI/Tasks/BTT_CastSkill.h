@@ -12,7 +12,6 @@
 UCLASS(Blueprintable)
 class MYRPG_API UBTT_CastSkill : public UBTTask_BlackboardBase
 {
-
 	GENERATED_BODY()
 
 public:
@@ -23,17 +22,21 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 	float RootMotionScale;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 	float MinScale;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
 	float MaxScale;
 
 	UFUNCTION(BlueprintCallable, Category = "Montage")
 	void ComputeRootMotionScale(ACharacter* AICharacter, float RootMotionTranslateSize);
-	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
+
+	UPROPERTY(EditAnywhere, Category = "Blackboard")	
+	TArray<int32> AbortValues;
 protected:
-	 float CalculateRootMotionDistance(UAnimMontage* Montage, float StartTime, float EndTime);
+	float CalculateRootMotionDistance(UAnimMontage* Montage, float StartTime, float EndTime);
+	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 };
