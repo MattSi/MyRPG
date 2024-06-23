@@ -11,9 +11,7 @@
 UBTT_CastSkill::UBTT_CastSkill()
 {
 	NodeName = "Cast Skill";
-	RootMotionScale = 1.0f;
-	MinScale = 0.3f;
-	MaxScale = 1.6f;
+	PreferRootMotionScale = 1.0f;
 	bNotifyTick = true;
 }
 
@@ -23,17 +21,9 @@ void UBTT_CastSkill::ComputeRootMotionScale(ACharacter* AICharacter, float RootM
 	if (PlayerCharacter == nullptr) return;
 
 	float DistanceToPlayer = FVector::Dist(AICharacter->GetActorLocation(), PlayerCharacter->GetActorLocation());
-	if (RootMotionTranslateSize > 0)
-	{
-		RootMotionScale = DistanceToPlayer / RootMotionTranslateSize;
-		RootMotionScale = FMath::Clamp(RootMotionScale, MinScale, MaxScale);
-	}
-	else
-	{
-		RootMotionScale = 1.0f;
-	}
-	UE_LOG(LogTemp, Log, TEXT("Distance to Player: %f, Root Motion Translation Size : %f, RootMotionScale: %f"),
-	       DistanceToPlayer, RootMotionTranslateSize, RootMotionScale);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Distance to Player: %f, Root Motion Translation Size : %f, RootMotionScale: %f"),
+	       DistanceToPlayer, RootMotionTranslateSize, PreferRootMotionScale);
 }
 
 EBTNodeResult::Type UBTT_CastSkill::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -55,20 +45,19 @@ EBTNodeResult::Type UBTT_CastSkill::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 							FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 						}
 					});
-
+					
 					// Calculate the root motion translation size of the montage
 					if(MontageToPlay->HasRootMotion())
 					{
-						float MontageLength = MontageToPlay->GetPlayLength();
-						float RootMotionTranslationSize = CalculateRootMotionDistance(MontageToPlay, 0, MontageLength);
-
+						const float MontageLength = MontageToPlay->GetPlayLength();
+						const float RootMotionTranslationSize = CalculateRootMotionDistance(MontageToPlay, 0, MontageLength);
+						
 						ComputeRootMotionScale(Character, RootMotionTranslationSize);
-						Character->SetAnimRootMotionTranslationScale(RootMotionScale);
+						Character->SetAnimRootMotionTranslationScale(PreferRootMotionScale);
 					}
 					
 					AnimInstance->Montage_Play(MontageToPlay);
 					AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, MontageToPlay);
-					
 					return EBTNodeResult::InProgress;
 				}
 				
@@ -78,36 +67,23 @@ EBTNodeResult::Type UBTT_CastSkill::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	return EBTNodeResult::Failed;
 }
 
-float UBTT_CastSkill::CalculateRootMotionDistance(UAnimMontage* Montage, float StartTime, float EndTime)
-{
-	if(!Montage) return 0.0f;
 
-	FTransform RootMotionTransform = Montage->ExtractRootMotion(StartTime, EndTime, false);
-	return RootMotionTransform.GetTranslation().Size();
+void UBTT_CastSkill::CalculateMontageDistances()
+{
 }
 
-void UBTT_CastSkill::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+float UBTT_CastSkill::CalculateRootMotionDistance(UAnimMontage* Montage, float StartTime, float EndTime)
 {
-	UBlackboardComponent* BlackboardComp = OwnerComp.GetBlackboardComponent();
-	if (BlackboardComp)
+	if(!Montage)
 	{
-		int32 BlackboardValue = BlackboardComp->GetValueAsInt(BlackboardKey.SelectedKeyName);
-		if (AbortValues.Contains(BlackboardValue))
-		{
-			if (auto* const Controller = Cast<AAIController>(OwnerComp.GetAIOwner()))
-			{
-				if (auto* const Character = Cast<ACharacter>(Controller->GetPawn()))
-				{
-					if (auto* AnimInstance = Character->GetMesh()->GetAnimInstance())
-					{
-						if(MontageToPlay )
-						{
-							AnimInstance->Montage_Stop(0, MontageToPlay);
-						}
-					}
-				}
-			}
-			FinishLatentTask(OwnerComp, EBTNodeResult::Aborted);
-		}
+		return 0.0f;
 	}
+
+	FTransform RootTransformStart = Montage->ExtractRootMotionFromTrackRange(0.0f, 0.0f);
+	FTransform RootTransformEnd = Montage->ExtractRootMotionFromTrackRange(0.0f, Montage->GetPlayLength());
+
+	const FVector StartLocation = RootTransformStart.GetLocation();
+	const FVector EndLocation = RootTransformEnd.GetLocation();
+	
+	return FVector::Dist(StartLocation, EndLocation);
 }

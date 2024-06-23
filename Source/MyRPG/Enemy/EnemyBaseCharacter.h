@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "EnemyBaseCharacter.generated.h"
 
+
+
 UCLASS()
 class MYRPG_API AEnemyBaseCharacter : public ACharacter
 {
@@ -25,5 +27,10 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations")
+	TArray<UAnimMontage*> Montages;
 
+	// Function to iterate through montages and calculate distance
+	void CalculateMontageDistances();
 };

@@ -21,22 +21,19 @@ public:
 	UAnimMontage* MontageToPlay;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
-	float RootMotionScale;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
-	float MinScale;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Montage")
-	float MaxScale;
+	float PreferRootMotionScale;
 
 	UFUNCTION(BlueprintCallable, Category = "Montage")
 	void ComputeRootMotionScale(ACharacter* AICharacter, float RootMotionTranslateSize);
 
+	// Array of animation montages
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animations")
+	TArray<UAnimMontage*> Montages;
 
-	UPROPERTY(EditAnywhere, Category = "Blackboard")	
-	TArray<int32> AbortValues;
+	void CalculateMontageDistances();
 protected:
 	float CalculateRootMotionDistance(UAnimMontage* Montage, float StartTime, float EndTime);
-	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
+	
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+
 };

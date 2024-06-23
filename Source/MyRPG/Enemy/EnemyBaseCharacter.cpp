@@ -3,12 +3,15 @@
 
 #include "Enemy/EnemyBaseCharacter.h"
 
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Kismet/GameplayStatics.h"
+
 // Sets default values
 AEnemyBaseCharacter::AEnemyBaseCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	Tags.Add(TEXT("Enemy"));
 }
 
@@ -16,7 +19,8 @@ AEnemyBaseCharacter::AEnemyBaseCharacter()
 void AEnemyBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	CalculateMontageDistances();
 }
 
 // Called every frame
@@ -32,4 +36,24 @@ void AEnemyBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 }
+
+void AEnemyBaseCharacter::CalculateMontageDistances()
+{
+	for (UAnimMontage* Montage : Montages)
+	{
+		if (Montage)
+		{
+			FTransform RootTransformStart = Montage->ExtractRootMotionFromTrackRange(0.0f, 0.0f);
+			FTransform RootTransformEnd = Montage->ExtractRootMotionFromTrackRange(0.0f, Montage->GetPlayLength());
+
+			const FVector StartLocation = RootTransformStart.GetLocation();
+			const FVector EndLocation = RootTransformEnd.GetLocation();
+			float Distance = FVector::Dist(StartLocation, EndLocation);
+
+			UE_LOG(LogTemp, Log, TEXT("Distance for Montage %s: %f"), *Montage->GetName(), Distance);
+		}
+	}
+}
+
+
 
